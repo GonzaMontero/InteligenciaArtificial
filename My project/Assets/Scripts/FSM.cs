@@ -1,21 +1,66 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
-public class FSM : MonoBehaviour
+public class FSM
 {
-    private List<State> states;
-    private int currentStateIndex = 0;
+    public int currentStateIndex = 0;
 
-    private void Start()
+    Dictionary<int, State> behaviours;
+
+    private int[/*Estado Origen*/, /*Condición*/] /* = Estado Destino*/ relations;
+
+    public FSM(int states, int flags)
     {
-        states = new List<State>();
+        currentStateIndex = -1;
 
-        //Add all states to List and run a forEach in order to set the init
+        relations = new int[states, flags];
+
+        for(int i = 0; i < states; i++)
+        {
+            for(int j = 0; j < flags; j++)
+            {
+                relations[i, j] = -1;
+            }
+        }
+
+        behaviours = new Dictionary<int, State>();
     }
 
-    private void Update()
+    public void SetRelation(int sourceState, int flag, int destinationState)
     {
-        //Perform the current state
+        relations[sourceState, flag] = destinationState;
+    }
+
+    public void SetFlag(int flag)
+    {
+        if (relations[currentStateIndex, flag] != -1)
+            currentStateIndex = relations[currentStateIndex, flag];
+    }
+
+    public void AddBehaviour(int state, Action behaviour)
+    {
+        if (behaviours.ContainsKey(state))
+        {
+            behaviours[state].behaviors.Add(behaviour);
+        }
+        else
+        {
+            State newState = new State();
+            newState.behaviors = new List<Action>();
+            newState.behaviors.Add(behaviour);
+            behaviours.Add(state, newState);
+        }
+    }
+
+    public void Update()
+    {
+        if (behaviours.ContainsKey(currentStateIndex))
+        {
+            foreach (Action behaviour in behaviours[currentStateIndex].behaviors)
+            {
+                behaviour?.Invoke();
+            }
+        }
     }
 }
